@@ -132,6 +132,8 @@ func PrintWorkflowHelper(wf *wfv1.Workflow, getArgs GetFlags) string {
 					out += fmt.Sprintf(fmtStr, "  "+art.Name+":", art.GCS.String())
 				} else if art.Azure != nil {
 					out += fmt.Sprintf(fmtStr, "  "+art.Name+":", art.Azure.String())
+				} else if art.OracleCloud != nil {
+					out += fmt.Sprintf(fmtStr, "  "+art.Name+":", art.OracleCloud.String())
 				}
 			}
 		}

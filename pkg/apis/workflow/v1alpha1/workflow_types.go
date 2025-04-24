@@ -1194,6 +1194,9 @@ type ArtifactLocation struct {
 
 	// Azure contains Azure Storage artifact location details
 	Azure *AzureArtifact `json:"azure,omitempty" protobuf:"bytes,10,opt,name=azure"`
+
+	// OracleCloud contains OCI Object Storage artifact location details
+	OracleCloud *OracleCloudArtifact `json:"oracleCloud,omitempty" protobuf:"bytes,11,opt,name=oracleCloud"`
 }
 
 func (a *ArtifactLocation) Get() (ArtifactLocationType, error) {
@@ -1217,6 +1220,8 @@ func (a *ArtifactLocation) Get() (ArtifactLocationType, error) {
 		return a.Raw, nil
 	} else if a.S3 != nil {
 		return a.S3, nil
+	} else if a.OracleCloud != nil {
+		return a.OracleCloud, nil
 	}
 	return nil, fmt.Errorf("You need to configure artifact storage. More information on how to do this can be found in the docs: https://argo-workflows.readthedocs.io/en/latest/configure-artifact-repository/")
 }
@@ -1241,6 +1246,8 @@ func (a *ArtifactLocation) SetType(x ArtifactLocationType) error {
 		a.Raw = &RawArtifact{}
 	case *S3Artifact:
 		a.S3 = &S3Artifact{}
+	case *OracleCloudArtifact:
+		a.OracleCloud = &OracleCloudArtifact{}
 	default:
 		return fmt.Errorf("set type not supported for type: %v", reflect.TypeOf(v))
 	}
@@ -2909,13 +2916,13 @@ func (h *HTTPArtifact) GetKey() (string, error) {
 	return u.Path, nil
 }
 
-func (g *HTTPArtifact) SetKey(key string) error {
-	u, err := url.Parse(g.URL)
+func (h *HTTPArtifact) SetKey(key string) error {
+	u, err := url.Parse(h.URL)
 	if err != nil {
 		return err
 	}
 	u.Path = key
-	g.URL = u.String()
+	h.URL = u.String()
 	return nil
 }
 
@@ -2923,7 +2930,49 @@ func (h *HTTPArtifact) HasLocation() bool {
 	return h != nil && h.URL != ""
 }
 
-// GCSBucket contains the access information for interfacring with a GCS bucket
+type OracleAuthMode string
+
+const (
+	// InstancePrincipals uses Instance Principals for authentication
+	InstancePrincipals OracleAuthMode = "InstancePrincipals"
+
+	// WorkloadPrincipals uses Workload Identity for authentication
+	WorkloadPrincipals OracleAuthMode = "WorkloadPrincipals"
+)
+
+type OracleCloudBucket struct {
+	// BucketName is the name of the OCI Object Storage bucket
+	BucketName string `json:"name,omitempty" protobuf:"bytes,2,opt,name=bucketName"`
+
+	// Region of the bucket
+	Region string `json:"name,omitempty" protobuf:"bytes,2,opt,name=region"`
+
+	// AuthMode is the authentication mode when communicating with OCI Object Storage
+	AuthMode OracleAuthMode `json:"name,omitempty" protobuf:"bytes,2,opt,name=authMode"`
+}
+
+// OracleCloudArtifact is the location of an OCI Object Storage artifact
+type OracleCloudArtifact struct {
+	OracleCloudBucket `json:",inline" protobuf:"bytes,1,opt,name=oracleCloudBucket"`
+
+	// Key is the path in the bucket where the artifact reside
+	Key string `json:",inline" protobuf:"bytes,2,opt,name=key"`
+}
+
+func (o *OracleCloudArtifact) GetKey() (string, error) {
+	return o.Key, nil
+}
+
+func (o *OracleCloudArtifact) SetKey(key string) error {
+	o.Key = key
+	return nil
+}
+
+func (o *OracleCloudArtifact) HasLocation() bool {
+	return o != nil && o.BucketName != "" && o.Key != ""
+}
+
+// GCSBucket contains the access information for interfacing with a GCS bucket
 type GCSBucket struct {
 	// Bucket is the name of the bucket
 	Bucket string `json:"bucket,omitempty" protobuf:"bytes,1,opt,name=bucket"`

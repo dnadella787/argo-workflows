@@ -62,6 +62,14 @@ func TestArtifactRepository(t *testing.T) {
 		require.NotNil(t, l.S3)
 		assert.Equal(t, "my-key-prefix/{{workflow.name}}/{{pod.name}}", l.S3.Key)
 	})
+	t.Run("OracleCloud", func(t *testing.T) {
+		r := &ArtifactRepository{OracleCloud: &OracleCloudArtifactRepository{}}
+		assert.IsType(t, &OracleCloudArtifactRepository{}, r.Get())
+		l := r.ToArtifactLocation()
+		if assert.NotNil(t, l.OracleCloud) {
+			assert.Equal(t, "{{workflow.name}}/{{pod.name}}", l.OracleCloud.Key)
+		}
+	})
 }
 
 func TestArtifactRepository_IsArchiveLogs(t *testing.T) {

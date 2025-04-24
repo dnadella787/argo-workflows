@@ -27,6 +27,8 @@ type ArtifactRepository struct {
 	GCS *GCSArtifactRepository `json:"gcs,omitempty" protobuf:"bytes,6,opt,name=gcs"`
 	// Azure stores artifact in an Azure Storage account
 	Azure *AzureArtifactRepository `json:"azure,omitempty" protobuf:"bytes,7,opt,name=azure"`
+	// Azure stores artifact in an Azure Storage account
+	OracleCloud *OracleCloudArtifactRepository `json:"oracleCloud,omitempty" protobuf:"bytes,7,opt,name=oracleCloud"`
 }
 
 func (a *ArtifactRepository) IsArchiveLogs() bool {
@@ -52,6 +54,8 @@ func (a *ArtifactRepository) Get() ArtifactRepositoryType {
 		return a.OSS
 	} else if a.S3 != nil {
 		return a.S3
+	} else if a.OracleCloud != nil {
+		return a.OracleCloud
 	}
 	return nil
 }
@@ -178,4 +182,18 @@ func (r *HDFSArtifactRepository) IntoArtifactLocation(l *ArtifactLocation) {
 	l.HDFS = &HDFSArtifact{HDFSConfig: r.HDFSConfig, Path: p, Force: r.Force}
 }
 
-// MetricsConfig defines a config for a metrics server
+// OracleCloudArtifactRepository defines the controller configuration for an OCI Object Storage artifact repository
+type OracleCloudArtifactRepository struct {
+	OracleCloudBucket `json:",inline" protobuf:"bytes,1,opt,name=oracleCloudBucket"`
+
+	// KeyFormat defines the format of how to store keys and can reference workflow variables.
+	KeyFormat string `json:"keyFormat,omitempty" protobuf:"bytes,2,opt,name=keyFormat"`
+}
+
+func (o *OracleCloudArtifactRepository) IntoArtifactLocation(l *ArtifactLocation) {
+	k := o.KeyFormat
+	if k == "" {
+		k = DefaultArchivePattern
+	}
+	l.OracleCloud = &OracleCloudArtifact{OracleCloudBucket: o.OracleCloudBucket, Key: k}
+}

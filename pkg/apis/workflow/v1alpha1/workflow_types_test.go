@@ -407,6 +407,15 @@ func TestS3Artifact(t *testing.T) {
 	assert.Equal(t, "my-key", key)
 }
 
+func TestOracleCloudArtifact(t *testing.T) {
+	a := &OracleCloudArtifact{OracleCloudBucket: OracleCloudBucket{BucketName: "my-bucket", Region: "us-ashburn-1", AuthMode: WorkloadPrincipals}}
+	assert.True(t, a.HasLocation())
+	assert.NoError(t, a.SetKey("my-key"))
+	key, err := a.GetKey()
+	assert.NoError(t, err)
+	assert.Equal(t, "my-key", key)
+}
+
 func TestArtifactLocation_Relocate(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
 		var l *ArtifactLocation
