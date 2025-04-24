@@ -3,6 +3,7 @@ package oraclecloud
 import (
 	"context"
 	"fmt"
+	"github.com/argoproj/argo-workflows/v3/errors"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	ocicommons "github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
@@ -14,6 +15,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 // ArtifactDriver is a driver for OCI Object Storage
@@ -65,73 +67,94 @@ func (ad *ArtifactDriver) Load(inputArtifact *v1alpha1.Artifact, localPath strin
 	}
 
 	objPath := path.Join(inputArtifact.OracleCloud.Key, inputArtifact.Name)
-	// Directly make GetObject call assuming that the artifact is a file
-	object, err := client.GetObject(ctx, objectstorage.GetObjectRequest{
-		NamespaceName: ns.Value,
-		BucketName:    pointer.String(ad.bucketName),
-		ObjectName:    pointer.String(objPath),
-	})
+	fPath := path.Join(localPath, inputArtifact.Name)
+	// Download object directly assuming artifact is a single file
+	err = ad.downloadObjectContent(ctx, client, *ns.Value, objPath, fPath)
+	if err != nil {
+		// the GetObject returned 404 so try to download the entire directory
+		if e, ok := err.(ocicommons.ServiceError); ok && e.GetHTTPStatusCode() == http.StatusNotFound {
+			return ad.loadDirectory(ctx, client, *ns.Value, objPath, fPath)
+		}
+		return err
+	}
+	return nil
+}
+
+func (ad *ArtifactDriver) downloadObjectContent(ctx context.Context, client *objectstorage.ObjectStorageClient, namespace, objPath, fPath string) error {
+	content, err := ad.getObjectContent(ctx, client, namespace, objPath)
 	if err == nil {
 		// copy the file to local storage
-		return downloadFile(localPath, inputArtifact.Name, object.Content)
-	}
-	// the GetObject returned 404 so list by prefix in case the artifact
-	// is a directory and download the entire directory
-	if e, ok := err.(ocicommons.ServiceError); ok && e.GetHTTPStatusCode() == http.StatusNotFound {
-		var nextStartsWith *string
-		for {
-			objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
-				NamespaceName: ns.Value,
-				BucketName:    pointer.String(ad.bucketName),
-				Prefix:        pointer.String(objPath),
-				StartAfter:    nextStartsWith,
-			})
-			if err != nil {
-				return err
-			}
-			nextStartsWith = objs.NextStartWith
-			for _, obj := range objs.Objects {
-				o, err := client.GetObject(ctx, objectstorage.GetObjectRequest{
-					NamespaceName: ns.Value,
-					BucketName:    pointer.String(ad.bucketName),
-					ObjectName:    obj.Name,
-				})
-				if err != nil {
-					return err
-				}
-
-				err = downloadFile(localPath, *obj.Name, o.Content)
-				if err != nil {
-					return err
-				}
-			}
-
-			// paginated through all files
-			if nextStartsWith == nil {
-				break
-			}
-		}
-		return nil
+		return downloadFile(content, fPath)
 	}
 	return err
 }
 
-func downloadFile(basePath string, fileName string, content io.ReadCloser) error {
-	fullPath := path.Join(basePath, fileName)
-	err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+func (ad *ArtifactDriver) getObjectContent(ctx context.Context, client *objectstorage.ObjectStorageClient, namespace, objPath string) (io.ReadCloser, error) {
+	object, err := client.GetObject(ctx, objectstorage.GetObjectRequest{
+		NamespaceName: pointer.String(namespace),
+		BucketName:    pointer.String(ad.bucketName),
+		ObjectName:    pointer.String(objPath),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return object.Content, nil
+}
+
+func downloadFile(content io.ReadCloser, fPath string) error {
+	err := os.MkdirAll(filepath.Dir(fPath), 0755)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.Create(fullPath)
+	f, err := os.Create(fPath)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			log.Warnf("unable to close file %s: %v", fullPath, err)
+			log.Warnf("unable to close file %s: %v", fPath, err)
 		}
 	}()
 	_, err = io.Copy(f, content)
 	return err
+}
+
+func (ad *ArtifactDriver) loadDirectory(ctx context.Context, client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix, localPath string) error {
+	var nextStartsWith *string
+	objsFound := false
+	for {
+		objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
+			NamespaceName: pointer.String(namespace),
+			BucketName:    pointer.String(ad.bucketName),
+			Prefix:        pointer.String(dirObjPrefix),
+			StartAfter:    nextStartsWith,
+		})
+		if err != nil {
+			return err
+		}
+		if len(objs.Objects) > 0 {
+			objsFound = true
+		}
+		nextStartsWith = objs.NextStartWith
+
+		for _, obj := range objs.Objects {
+			// remove the key + directory from the full object name and append it
+			// to the local directory path
+			filePath := path.Join(localPath, strings.TrimPrefix(*obj.Name, dirObjPrefix))
+			err = ad.downloadObjectContent(ctx, client, namespace, *obj.Name, filePath)
+			if err != nil {
+				return err
+			}
+		}
+
+		// paginated through all files
+		if nextStartsWith == nil {
+			break
+		}
+	}
+	if !objsFound {
+		return errors.New(errors.CodeNotFound, fmt.Sprintf("directory %s not found in Oracle Object Storage bucket %s in namespace %s", dirObjPrefix, ad.bucketName, namespace))
+	}
+	return nil
 }
