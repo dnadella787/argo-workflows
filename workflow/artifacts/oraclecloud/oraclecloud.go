@@ -35,22 +35,17 @@ func (ad *ArtifactDriver) Load(inputArtifact *v1alpha1.Artifact, localPath strin
 	// get object storage namespace for the tenancy
 	ns, err := getNamespace(client)
 	if err != nil {
-
+		return err
 	}
 
-	// path to object in object storage bucket -> {key}/path/to/artifact
-	objPath := path.Join(inputArtifact.OracleCloud.Key, inputArtifact.Name)
-	// local file path the file needs to be copied to
-	fPath := path.Join(localPath, inputArtifact.Name)
-
-	return ad.loadDir(client, ns, objPath, fPath)
+	return ad.loadDir(client, ns, inputArtifact.OracleCloud.Key, localPath)
 }
 
 func (ad *ArtifactDriver) OpenStream(a *v1alpha1.Artifact) (io.ReadCloser, error) {
 	return nil, nil
 }
 
-func (ad *ArtifactDriver) Save(filePath string, outputArtifact *v1alpha1.Artifact) error {
+func (ad *ArtifactDriver) Save(localPath string, outputArtifact *v1alpha1.Artifact) error {
 	client, err := ad.newOracleCloudClient()
 	if err != nil {
 		return err
@@ -61,7 +56,7 @@ func (ad *ArtifactDriver) Save(filePath string, outputArtifact *v1alpha1.Artifac
 		return err
 	}
 
-	return ad.uploadDir(client, ns, outputArtifact.OracleCloud.Key, filePath)
+	return ad.uploadDir(client, ns, outputArtifact.OracleCloud.Key, localPath)
 }
 
 func (ad *ArtifactDriver) Delete(artifact *v1alpha1.Artifact) error {
@@ -75,8 +70,7 @@ func (ad *ArtifactDriver) Delete(artifact *v1alpha1.Artifact) error {
 		return err
 	}
 
-	objPath := path.Join(artifact.OracleCloud.Key, artifact.Path)
-	return ad.deleteDir(client, ns, objPath)
+	return ad.deleteDir(client, ns, artifact.OracleCloud.Key)
 }
 
 func (ad *ArtifactDriver) ListObjects(artifact *v1alpha1.Artifact) ([]string, error) {
@@ -233,8 +227,7 @@ func (ad *ArtifactDriver) loadDir(client *objectstorage.ObjectStorageClient, nam
 		nextStartsWith = objs.NextStartWith
 
 		for _, obj := range objs.Objects {
-			// remove the key + directory from the full object name and append it
-			// to the local directory path
+			// remove the key from the full object name and append it to the local directory path
 			filePath := path.Join(localPath, strings.TrimPrefix(*obj.Name, dirObjPrefix))
 			err = ad.loadFile(client, namespace, *obj.Name, filePath)
 			if err != nil {
