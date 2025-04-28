@@ -20,9 +20,9 @@ import (
 
 // ArtifactDriver is a driver for OCI Object Storage
 type ArtifactDriver struct {
-	authMode   v1alpha1.OracleAuthMode
-	bucketName string
-	region     string
+	AuthMode   v1alpha1.OracleAuthMode
+	BucketName string
+	Region     string
 }
 
 func (ad *ArtifactDriver) Load(inputArtifact *v1alpha1.Artifact, localPath string) error {
@@ -43,7 +43,7 @@ func (ad *ArtifactDriver) Load(inputArtifact *v1alpha1.Artifact, localPath strin
 	// local file path the file needs to be copied to
 	fPath := path.Join(localPath, inputArtifact.Name)
 
-	return ad.loadDirectory(client, ns, objPath, fPath)
+	return ad.loadDir(client, ns, objPath, fPath)
 }
 
 func (ad *ArtifactDriver) OpenStream(a *v1alpha1.Artifact) (io.ReadCloser, error) {
@@ -61,11 +61,22 @@ func (ad *ArtifactDriver) Save(filePath string, outputArtifact *v1alpha1.Artifac
 		return err
 	}
 
-	return ad.uploadDirectory(client, ns, outputArtifact.OracleCloud.Key, filePath)
+	return ad.uploadDir(client, ns, outputArtifact.OracleCloud.Key, filePath)
 }
 
 func (ad *ArtifactDriver) Delete(artifact *v1alpha1.Artifact) error {
-	return nil
+	client, err := ad.newOracleCloudClient()
+	if err != nil {
+		return err
+	}
+
+	ns, err := getNamespace(client)
+	if err != nil {
+		return err
+	}
+
+	objPath := path.Join(artifact.OracleCloud.Key, artifact.Path)
+	return ad.deleteDir(client, ns, objPath)
 }
 
 func (ad *ArtifactDriver) ListObjects(artifact *v1alpha1.Artifact) ([]string, error) {
@@ -88,18 +99,18 @@ func (ad *ArtifactDriver) newOracleCloudClient() (*objectstorage.ObjectStorageCl
 		return nil, err
 	}
 
-	c.SetRegion(ad.region)
+	c.SetRegion(ad.Region)
 	return &c, nil
 }
 
 func (ad *ArtifactDriver) newAuthProvider() (ocicommons.ConfigurationProvider, error) {
-	switch ad.authMode {
+	switch ad.AuthMode {
 	case v1alpha1.WorkloadPrincipals:
 		return auth.OkeWorkloadIdentityConfigurationProvider()
 	case v1alpha1.InstancePrincipals:
 		return auth.InstancePrincipalConfigurationProvider()
 	default:
-		return nil, fmt.Errorf("invalid AuthMode: %s for Oracle Cloud Object Storage", ad.authMode)
+		return nil, fmt.Errorf("invalid AuthMode: %s for Oracle Cloud Object Storage", ad.AuthMode)
 	}
 }
 
@@ -126,7 +137,7 @@ func (ad *ArtifactDriver) uploadFile(client *objectstorage.ObjectStorageClient, 
 	ctx := context.Background()
 	_, err = client.PutObject(ctx, objectstorage.PutObjectRequest{
 		NamespaceName: pointer.String(namespace),
-		BucketName:    pointer.String(ad.bucketName),
+		BucketName:    pointer.String(ad.BucketName),
 		ObjectName:    pointer.String(objPath),
 		PutObjectBody: file,
 		ContentLength: pointer.Int64(fSize),
@@ -134,21 +145,58 @@ func (ad *ArtifactDriver) uploadFile(client *objectstorage.ObjectStorageClient, 
 	return err
 }
 
-func (ad *ArtifactDriver) uploadDirectory(client *objectstorage.ObjectStorageClient, namespace, objBase, dirBase string) error {
+func (ad *ArtifactDriver) uploadDir(client *objectstorage.ObjectStorageClient, namespace, objBase, dirBase string) error {
 	return filepath.Walk(dirBase, func(fPath string, fs fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-
 		if fs.IsDir() {
 			return nil
 		}
 
-		// Construct the object name in OCI Object Storage
-		// objName = {artifact.oracleCloud.key}/{artifact.path}
-		objName := path.Join(objBase, dirBase)
+		// Construct the object name in Object Storage
+		objName := path.Join(objBase, fPath)
 		return ad.uploadFile(client, namespace, objName, fPath, fs.Size())
 	})
+}
+
+func (ad *ArtifactDriver) deleteObj(client *objectstorage.ObjectStorageClient, namespace, obj string) error {
+	ctx := context.Background()
+	_, err := client.DeleteObject(ctx, objectstorage.DeleteObjectRequest{
+		NamespaceName: pointer.String(namespace),
+		BucketName:    pointer.String(ad.BucketName),
+		ObjectName:    pointer.String(obj),
+	})
+	return err
+}
+
+func (ad *ArtifactDriver) deleteDir(client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix string) error {
+	ctx := context.Background()
+	var nextStartsWith *string
+	for {
+		objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
+			NamespaceName: pointer.String(namespace),
+			BucketName:    pointer.String(ad.BucketName),
+			Prefix:        pointer.String(dirObjPrefix),
+			StartAfter:    nextStartsWith,
+		})
+		if err != nil {
+			return err
+		}
+		nextStartsWith = objs.NextStartWith
+
+		for _, obj := range objs.Objects {
+			if err = ad.deleteObj(client, namespace, *obj.Name); err != nil {
+				return err
+			}
+		}
+
+		// paginated through all files
+		if nextStartsWith == nil {
+			break
+		}
+	}
+	return nil
 }
 
 // loadFile downloads the contents of a specific file
@@ -161,10 +209,10 @@ func (ad *ArtifactDriver) loadFile(client *objectstorage.ObjectStorageClient, na
 	return err
 }
 
-// loadDirectory loads an entire directory but works for a single
+// loadDir loads an entire directory but works for a single
 // file too because the directory object storage prefix for a file
 // is just the entire file name which gets returned in list call
-func (ad *ArtifactDriver) loadDirectory(client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix, localPath string) error {
+func (ad *ArtifactDriver) loadDir(client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix, localPath string) error {
 	var nextStartsWith *string
 	objsFound := false
 	ctx := context.Background()
@@ -172,7 +220,7 @@ func (ad *ArtifactDriver) loadDirectory(client *objectstorage.ObjectStorageClien
 	for {
 		objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
 			NamespaceName: pointer.String(namespace),
-			BucketName:    pointer.String(ad.bucketName),
+			BucketName:    pointer.String(ad.BucketName),
 			Prefix:        pointer.String(dirObjPrefix),
 			StartAfter:    nextStartsWith,
 		})
@@ -200,7 +248,7 @@ func (ad *ArtifactDriver) loadDirectory(client *objectstorage.ObjectStorageClien
 		}
 	}
 	if !objsFound {
-		return errors.New(errors.CodeNotFound, fmt.Sprintf("directory %s not found in Oracle Object Storage bucket %s in namespace %s", dirObjPrefix, ad.bucketName, namespace))
+		return errors.New(errors.CodeNotFound, fmt.Sprintf("directory %s not found in Oracle Object Storage bucket %s in namespace %s", dirObjPrefix, ad.BucketName, namespace))
 	}
 	return nil
 }
@@ -210,7 +258,7 @@ func (ad *ArtifactDriver) getObjectContent(client *objectstorage.ObjectStorageCl
 	ctx := context.Background()
 	object, err := client.GetObject(ctx, objectstorage.GetObjectRequest{
 		NamespaceName: pointer.String(namespace),
-		BucketName:    pointer.String(ad.bucketName),
+		BucketName:    pointer.String(ad.BucketName),
 		ObjectName:    pointer.String(objPath),
 	})
 	if err != nil {

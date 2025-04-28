@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"github.com/argoproj/argo-workflows/v3/workflow/artifacts/oraclecloud"
 	gohttp "net/http"
 
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
@@ -272,6 +273,14 @@ func newDriver(ctx context.Context, art *wfv1.Artifact, ri resource.Interface) (
 			UseSDKCreds: art.Azure.UseSDKCreds,
 		}
 		return &driver, nil
+	}
+
+	if art.OracleCloud != nil {
+		return &oraclecloud.ArtifactDriver{
+			AuthMode:   art.OracleCloud.AuthMode,
+			BucketName: art.OracleCloud.BucketName,
+			Region:     art.OracleCloud.Region,
+		}, nil
 	}
 
 	return nil, ErrUnsupportedDriver
