@@ -26,13 +26,11 @@ type ArtifactDriver struct {
 }
 
 func (ad *ArtifactDriver) Load(inputArtifact *v1alpha1.Artifact, localPath string) error {
-	// get new OCI object storage client
 	client, err := ad.newOracleCloudClient()
 	if err != nil {
 		return err
 	}
 
-	// get object storage namespace for the tenancy
 	ns, err := getNamespace(client)
 	if err != nil {
 		return err
@@ -42,7 +40,18 @@ func (ad *ArtifactDriver) Load(inputArtifact *v1alpha1.Artifact, localPath strin
 }
 
 func (ad *ArtifactDriver) OpenStream(a *v1alpha1.Artifact) (io.ReadCloser, error) {
-	return nil, nil
+	client, err := ad.newOracleCloudClient()
+	if err != nil {
+		return nil, err
+	}
+
+	ns, err := getNamespace(client)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: stream directory as a tar ball when capability comes
+	return ad.getObjectContent(client, ns, a.OracleCloud.Key)
 }
 
 func (ad *ArtifactDriver) Save(localPath string, outputArtifact *v1alpha1.Artifact) error {
@@ -88,7 +97,33 @@ func (ad *ArtifactDriver) ListObjects(artifact *v1alpha1.Artifact) ([]string, er
 }
 
 func (ad *ArtifactDriver) IsDirectory(artifact *v1alpha1.Artifact) (bool, error) {
-	return true, nil
+	client, err := ad.newOracleCloudClient()
+	if err != nil {
+		return false, err
+	}
+
+	ns, err := getNamespace(client)
+	if err != nil {
+		return false, err
+	}
+
+	objPrefix := artifact.OracleCloud.Key
+	if !strings.HasSuffix(objPrefix, "/") {
+		objPrefix += "/"
+	}
+
+	ctx := context.Background()
+	objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
+		NamespaceName: pointer.String(ns),
+		BucketName:    pointer.String(ad.BucketName),
+		Prefix:        pointer.String(objPrefix),
+		Limit:         pointer.Int(1),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return len(objs.Objects) > 0, err
 }
 
 // newOracleCloudClient returns an Oracle Cloud Object Storage Client
