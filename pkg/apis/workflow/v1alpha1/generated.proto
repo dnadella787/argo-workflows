@@ -159,6 +159,9 @@ message ArtifactLocation {
 
   // Azure contains Azure Storage artifact location details
   optional AzureArtifact azure = 10;
+
+  // OracleCloud contains OCI Object Storage artifact location details
+  optional OracleCloudArtifact oracleCloud = 11;
 }
 
 // ArtifactNodeSpec specifies the Artifacts that need to be deleted for a given Node
@@ -198,6 +201,9 @@ message ArtifactRepository {
 
   // Azure stores artifact in an Azure Storage account
   optional AzureArtifactRepository azure = 7;
+
+  // Azure stores artifact in an Azure Storage account
+  optional OracleCloudArtifactRepository oracleCloud = 8;
 }
 
 // +protobuf.options.(gogoproto.goproto_stringer)=false
@@ -663,7 +669,7 @@ message GCSArtifactRepository {
   optional string keyFormat = 2;
 }
 
-// GCSBucket contains the access information for interfacring with a GCS bucket
+// GCSBucket contains the access information for interfacing with a GCS bucket
 message GCSBucket {
   // Bucket is the name of the bucket
   optional string bucket = 1;
@@ -1224,6 +1230,33 @@ message OSSLifecycleRule {
 // +kubebuilder:validation:Type=object
 message Object {
   optional bytes value = 1;
+}
+
+// OracleCloudArtifact is the location of an OCI Object Storage artifact
+message OracleCloudArtifact {
+  optional OracleCloudBucket oracleCloudBucket = 1;
+
+  // Key is the path in the bucket where the artifact reside
+  optional string key = 2;
+}
+
+// OracleCloudArtifactRepository defines the controller configuration for an OCI Object Storage artifact repository
+message OracleCloudArtifactRepository {
+  optional OracleCloudBucket oracleCloudBucket = 1;
+
+  // KeyFormat defines the format of how to store keys and can reference workflow variables.
+  optional string keyFormat = 2;
+}
+
+message OracleCloudBucket {
+  // BucketName is the name of the OCI Object Storage bucket
+  optional string bucketName = 1;
+
+  // Region of the bucket
+  optional string region = 2;
+
+  // AuthMode is the authentication mode when communicating with OCI Object Storage
+  optional string authMode = 3;
 }
 
 // Outputs hold parameters, artifacts, and results from a step
