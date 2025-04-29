@@ -28,7 +28,7 @@ type ArtifactRepository struct {
 	// Azure stores artifact in an Azure Storage account
 	Azure *AzureArtifactRepository `json:"azure,omitempty" protobuf:"bytes,7,opt,name=azure"`
 	// Azure stores artifact in an Azure Storage account
-	OracleCloud *OracleCloudArtifactRepository `json:"oracleCloud,omitempty" protobuf:"bytes,7,opt,name=oracleCloud"`
+	OracleCloud *OracleCloudArtifactRepository `json:"oracleCloud,omitempty" protobuf:"bytes,8,opt,name=oracleCloud"`
 }
 
 func (a *ArtifactRepository) IsArchiveLogs() bool {

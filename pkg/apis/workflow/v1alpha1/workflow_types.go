@@ -2942,13 +2942,13 @@ const (
 
 type OracleCloudBucket struct {
 	// BucketName is the name of the OCI Object Storage bucket
-	BucketName string `json:"name,omitempty" protobuf:"bytes,2,opt,name=bucketName"`
+	BucketName string `json:"bucketName,omitempty" protobuf:"bytes,1,opt,name=bucketName"`
 
 	// Region of the bucket
-	Region string `json:"name,omitempty" protobuf:"bytes,2,opt,name=region"`
+	Region string `json:"region,omitempty" protobuf:"bytes,2,opt,name=region"`
 
 	// AuthMode is the authentication mode when communicating with OCI Object Storage
-	AuthMode OracleAuthMode `json:"name,omitempty" protobuf:"bytes,2,opt,name=authMode"`
+	AuthMode OracleAuthMode `json:"authMode,omitempty" protobuf:"bytes,3,opt,name=authMode"`
 }
 
 // OracleCloudArtifact is the location of an OCI Object Storage artifact
@@ -2956,7 +2956,7 @@ type OracleCloudArtifact struct {
 	OracleCloudBucket `json:",inline" protobuf:"bytes,1,opt,name=oracleCloudBucket"`
 
 	// Key is the path in the bucket where the artifact reside
-	Key string `json:",inline" protobuf:"bytes,2,opt,name=key"`
+	Key string `json:"key,inline" protobuf:"bytes,2,opt,name=key"`
 }
 
 func (o *OracleCloudArtifact) GetKey() (string, error) {
