@@ -8186,6 +8186,10 @@
           "description": "Make Artifacts optional, if Artifacts doesn't generate or exist",
           "type": "boolean"
         },
+        "oracleCloud": {
+          "description": "OracleCloud contains OCI Object Storage artifact location details",
+          "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.OracleCloudArtifact"
+        },
         "oss": {
           "description": "OSS contains OSS artifact location details",
           "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.OSSArtifact"
@@ -8261,6 +8265,10 @@
         "http": {
           "description": "HTTP contains HTTP artifact location details",
           "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.HTTPArtifact"
+        },
+        "oracleCloud": {
+          "description": "OracleCloud contains OCI Object Storage artifact location details",
+          "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.OracleCloudArtifact"
         },
         "oss": {
           "description": "OSS contains OSS artifact location details",
@@ -8347,6 +8355,10 @@
           "description": "Make Artifacts optional, if Artifacts doesn't generate or exist",
           "type": "boolean"
         },
+        "oracleCloud": {
+          "description": "OracleCloud contains OCI Object Storage artifact location details",
+          "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.OracleCloudArtifact"
+        },
         "oss": {
           "description": "OSS contains OSS artifact location details",
           "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.OSSArtifact"
@@ -8396,6 +8408,10 @@
         "hdfs": {
           "description": "HDFS stores artifacts in HDFS",
           "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.HDFSArtifactRepository"
+        },
+        "oracleCloud": {
+          "description": "Azure stores artifact in an Azure Storage account",
+          "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.OracleCloudArtifactRepository"
         },
         "oss": {
           "description": "OSS stores artifact in a OSS-compliant object store",
@@ -10360,6 +10376,61 @@
         "markInfrequentAccessAfterDays": {
           "description": "MarkInfrequentAccessAfterDays is the number of days before we convert the objects in the bucket to Infrequent Access (IA) storage type",
           "type": "integer"
+        }
+      }
+    },
+    "io.argoproj.workflow.v1alpha1.OracleCloudArtifact": {
+      "description": "OracleCloudArtifact is the location of an OCI Object Storage artifact",
+      "type": "object",
+      "required": [
+        "bucketName",
+        "region",
+        "authMode",
+        "key"
+      ],
+      "properties": {
+        "authMode": {
+          "description": "AuthMode is the authentication mode when communicating with OCI Object Storage",
+          "type": "string"
+        },
+        "bucketName": {
+          "description": "BucketName is the name of the OCI Object Storage bucket",
+          "type": "string"
+        },
+        "key": {
+          "description": "Key is the path in the bucket where the artifact reside",
+          "type": "string"
+        },
+        "region": {
+          "description": "Region of the bucket",
+          "type": "string"
+        }
+      }
+    },
+    "io.argoproj.workflow.v1alpha1.OracleCloudArtifactRepository": {
+      "description": "OracleCloudArtifactRepository defines the controller configuration for an OCI Object Storage artifact repository",
+      "type": "object",
+      "required": [
+        "bucketName",
+        "region",
+        "authMode"
+      ],
+      "properties": {
+        "authMode": {
+          "description": "AuthMode is the authentication mode when communicating with OCI Object Storage",
+          "type": "string"
+        },
+        "bucketName": {
+          "description": "BucketName is the name of the OCI Object Storage bucket",
+          "type": "string"
+        },
+        "keyFormat": {
+          "description": "KeyFormat defines the format of how to store keys and can reference workflow variables.",
+          "type": "string"
+        },
+        "region": {
+          "description": "Region of the bucket",
+          "type": "string"
         }
       }
     },

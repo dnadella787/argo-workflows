@@ -4774,6 +4774,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifact(ref common.ReferenceC
 					"bucketName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BucketName is the name of the OCI Object Storage bucket",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4781,6 +4782,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifact(ref common.ReferenceC
 					"region": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Region of the bucket",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4788,11 +4790,21 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifact(ref common.ReferenceC
 					"authMode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AuthMode is the authentication mode when communicating with OCI Object Storage",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Key is the path in the bucket where the artifact reside",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
+				Required: []string{"bucketName", "region", "authMode", "key"},
 			},
 		},
 	}
@@ -4808,6 +4820,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifactRepository(ref common.
 					"bucketName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BucketName is the name of the OCI Object Storage bucket",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4815,6 +4828,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifactRepository(ref common.
 					"region": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Region of the bucket",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4822,6 +4836,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifactRepository(ref common.
 					"authMode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AuthMode is the authentication mode when communicating with OCI Object Storage",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4834,6 +4849,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudArtifactRepository(ref common.
 						},
 					},
 				},
+				Required: []string{"bucketName", "region", "authMode"},
 			},
 		},
 	}
@@ -4848,6 +4864,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudBucket(ref common.ReferenceCal
 					"bucketName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BucketName is the name of the OCI Object Storage bucket",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4855,6 +4872,7 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudBucket(ref common.ReferenceCal
 					"region": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Region of the bucket",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4862,11 +4880,13 @@ func schema_pkg_apis_workflow_v1alpha1_OracleCloudBucket(ref common.ReferenceCal
 					"authMode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AuthMode is the authentication mode when communicating with OCI Object Storage",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
+				Required: []string{"bucketName", "region", "authMode"},
 			},
 		},
 	}

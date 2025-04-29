@@ -1,9 +1,7 @@
----
+# This is an auto-generated file. DO NOT EDIT
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.17.2
   name: workflowtasksets.argoproj.io
 spec:
   group: argoproj.io
@@ -836,8 +834,15 @@ spec:
                               type: string
                             bucketName:
                               type: string
+                            key:
+                              type: string
                             region:
                               type: string
+                          required:
+                          - authMode
+                          - bucketName
+                          - key
+                          - region
                           type: object
                         oss:
                           properties:
@@ -2820,8 +2825,15 @@ spec:
                                               type: string
                                             bucketName:
                                               type: string
+                                            key:
+                                              type: string
                                             region:
                                               type: string
+                                          required:
+                                          - authMode
+                                          - bucketName
+                                          - key
+                                          - region
                                           type: object
                                         oss:
                                           properties:
@@ -3469,8 +3481,15 @@ spec:
                                                     type: string
                                                   bucketName:
                                                     type: string
+                                                  key:
+                                                    type: string
                                                   region:
                                                     type: string
+                                                required:
+                                                - authMode
+                                                - bucketName
+                                                - key
+                                                - region
                                                 type: object
                                               oss:
                                                 properties:
@@ -4168,8 +4187,15 @@ spec:
                                       type: string
                                     bucketName:
                                       type: string
+                                    key:
+                                      type: string
                                     region:
                                       type: string
+                                  required:
+                                  - authMode
+                                  - bucketName
+                                  - key
+                                  - region
                                   type: object
                                 oss:
                                   properties:
@@ -5514,8 +5540,15 @@ spec:
                                     type: string
                                   bucketName:
                                     type: string
+                                  key:
+                                    type: string
                                   region:
                                     type: string
+                                required:
+                                - authMode
+                                - bucketName
+                                - key
+                                - region
                                 type: object
                               oss:
                                 properties:
@@ -6255,8 +6288,15 @@ spec:
                                     type: string
                                   bucketName:
                                     type: string
+                                  key:
+                                    type: string
                                   region:
                                     type: string
+                                required:
+                                - authMode
+                                - bucketName
+                                - key
+                                - region
                                 type: object
                               oss:
                                 properties:
@@ -6913,8 +6953,15 @@ spec:
                                       type: string
                                     bucketName:
                                       type: string
+                                    key:
+                                      type: string
                                     region:
                                       type: string
+                                  required:
+                                  - authMode
+                                  - bucketName
+                                  - key
+                                  - region
                                   type: object
                                 oss:
                                   properties:
@@ -8985,8 +9032,15 @@ spec:
                                                 type: string
                                               bucketName:
                                                 type: string
+                                              key:
+                                                type: string
                                               region:
                                                 type: string
+                                            required:
+                                            - authMode
+                                            - bucketName
+                                            - key
+                                            - region
                                             type: object
                                           oss:
                                             properties:
@@ -9628,8 +9682,15 @@ spec:
                                                       type: string
                                                     bucketName:
                                                       type: string
+                                                    key:
+                                                      type: string
                                                     region:
                                                       type: string
+                                                  required:
+                                                  - authMode
+                                                  - bucketName
+                                                  - key
+                                                  - region
                                                   type: object
                                                 oss:
                                                   properties:
@@ -10206,6 +10267,8 @@ spec:
                                         items:
                                           type: string
                                         type: array
+                                      generateName:
+                                        type: string
                                       labels:
                                         additionalProperties:
                                           type: string
@@ -11213,8 +11276,15 @@ spec:
                                     type: string
                                   bucketName:
                                     type: string
+                                  key:
+                                    type: string
                                   region:
                                     type: string
+                                required:
+                                - authMode
+                                - bucketName
+                                - key
+                                - region
                                 type: object
                               oss:
                                 properties:

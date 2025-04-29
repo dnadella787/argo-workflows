@@ -2223,6 +2223,7 @@ Artifact indicates an artifact to place at a specified path
 |`mode`|`integer`|mode bits to use on this file, must be a value between 0 and 0777 set when loading input artifacts.|
 |`name`|`string`|name of the artifact. must be unique within a template's inputs/outputs.|
 |`optional`|`boolean`|Make Artifacts optional, if Artifacts doesn't generate or exist|
+|`oracleCloud`|[`OracleCloudArtifact`](#oraclecloudartifact)|OracleCloud contains OCI Object Storage artifact location details|
 |`oss`|[`OSSArtifact`](#ossartifact)|OSS contains OSS artifact location details|
 |`path`|`string`|Path is the container path to the artifact|
 |`raw`|[`RawArtifact`](#rawartifact)|Raw contains raw artifact location details|
@@ -2578,6 +2579,7 @@ ArtifactLocation describes a location for a single or multiple artifacts. It is 
 |`git`|[`GitArtifact`](#gitartifact)|Git contains git artifact location details|
 |`hdfs`|[`HDFSArtifact`](#hdfsartifact)|HDFS contains HDFS artifact location details|
 |`http`|[`HTTPArtifact`](#httpartifact)|HTTP contains HTTP artifact location details|
+|`oracleCloud`|[`OracleCloudArtifact`](#oraclecloudartifact)|OracleCloud contains OCI Object Storage artifact location details|
 |`oss`|[`OSSArtifact`](#ossartifact)|OSS contains OSS artifact location details|
 |`raw`|[`RawArtifact`](#rawartifact)|Raw contains raw artifact location details|
 |`s3`|[`S3Artifact`](#s3artifact)|S3 contains S3 artifact location details|
@@ -3405,6 +3407,7 @@ ArtifactRepository represents an artifact repository in which a controller will 
 |`azure`|[`AzureArtifactRepository`](#azureartifactrepository)|Azure stores artifact in an Azure Storage account|
 |`gcs`|[`GCSArtifactRepository`](#gcsartifactrepository)|GCS stores artifact in a GCS object store|
 |`hdfs`|[`HDFSArtifactRepository`](#hdfsartifactrepository)|HDFS stores artifacts in HDFS|
+|`oracleCloud`|[`OracleCloudArtifactRepository`](#oraclecloudartifactrepository)|Azure stores artifact in an Azure Storage account|
 |`oss`|[`OSSArtifactRepository`](#ossartifactrepository)|OSS stores artifact in a OSS-compliant object store|
 |`s3`|[`S3ArtifactRepository`](#s3artifactrepository)|S3 stores artifact in a S3-compliant object store|
 
@@ -3684,6 +3687,18 @@ HTTPArtifact allows a file served on HTTP to be placed as an input artifact in a
 |`auth`|[`HTTPAuth`](#httpauth)|Auth contains information for client authentication|
 |`headers`|`Array<`[`Header`](#header)`>`|Headers are an optional list of headers to send with HTTP requests for artifacts|
 |`url`|`string`|URL of the artifact|
+
+## OracleCloudArtifact
+
+OracleCloudArtifact is the location of an OCI Object Storage artifact
+
+### Fields
+| Field Name | Field Type | Description   |
+|:----------:|:----------:|---------------|
+|`authMode`|`string`|AuthMode is the authentication mode when communicating with OCI Object Storage|
+|`bucketName`|`string`|BucketName is the name of the OCI Object Storage bucket|
+|`key`|`string`|Key is the path in the bucket where the artifact reside|
+|`region`|`string`|Region of the bucket|
 
 ## OSSArtifact
 
@@ -4439,6 +4454,18 @@ HDFSArtifactRepository defines the controller configuration for an HDFS artifact
 |`krbUsername`|`string`|KrbUsername is the Kerberos username used with Kerberos keytab It must be set if keytab is used.|
 |`pathFormat`|`string`|PathFormat is defines the format of path to store a file. Can reference workflow variables|
 
+## OracleCloudArtifactRepository
+
+OracleCloudArtifactRepository defines the controller configuration for an OCI Object Storage artifact repository
+
+### Fields
+| Field Name | Field Type | Description   |
+|:----------:|:----------:|---------------|
+|`authMode`|`string`|AuthMode is the authentication mode when communicating with OCI Object Storage|
+|`bucketName`|`string`|BucketName is the name of the OCI Object Storage bucket|
+|`keyFormat`|`string`|KeyFormat defines the format of how to store keys and can reference workflow variables.|
+|`region`|`string`|Region of the bucket|
+
 ## OSSArtifactRepository
 
 OSSArtifactRepository defines the controller configuration for an OSS artifact repository
@@ -4658,6 +4685,7 @@ ArtifactPaths expands a step from a collection of artifacts
 |`mode`|`integer`|mode bits to use on this file, must be a value between 0 and 0777 set when loading input artifacts.|
 |`name`|`string`|name of the artifact. must be unique within a template's inputs/outputs.|
 |`optional`|`boolean`|Make Artifacts optional, if Artifacts doesn't generate or exist|
+|`oracleCloud`|[`OracleCloudArtifact`](#oraclecloudartifact)|OracleCloud contains OCI Object Storage artifact location details|
 |`oss`|[`OSSArtifact`](#ossartifact)|OSS contains OSS artifact location details|
 |`path`|`string`|Path is the container path to the artifact|
 |`raw`|[`RawArtifact`](#rawartifact)|Raw contains raw artifact location details|

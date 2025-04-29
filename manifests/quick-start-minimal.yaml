@@ -458,6 +458,22 @@ spec:
                           required:
                           - url
                           type: object
+                        oracleCloud:
+                          properties:
+                            authMode:
+                              type: string
+                            bucketName:
+                              type: string
+                            key:
+                              type: string
+                            region:
+                              type: string
+                          required:
+                          - authMode
+                          - bucketName
+                          - key
+                          - region
+                          type: object
                         oss:
                           properties:
                             accessKeySecret:
@@ -1017,6 +1033,22 @@ spec:
                             type: string
                           optional:
                             type: boolean
+                          oracleCloud:
+                            properties:
+                              authMode:
+                                type: string
+                              bucketName:
+                                type: string
+                              key:
+                                type: string
+                              region:
+                                type: string
+                            required:
+                            - authMode
+                            - bucketName
+                            - key
+                            - region
+                            type: object
                           oss:
                             properties:
                               accessKeySecret:
@@ -1656,6 +1688,22 @@ spec:
                               type: string
                             optional:
                               type: boolean
+                            oracleCloud:
+                              properties:
+                                authMode:
+                                  type: string
+                                bucketName:
+                                  type: string
+                                key:
+                                  type: string
+                                region:
+                                  type: string
+                              required:
+                              - authMode
+                              - bucketName
+                              - key
+                              - region
+                              type: object
                             oss:
                               properties:
                                 accessKeySecret:
@@ -2402,6 +2450,22 @@ spec:
                       type: string
                     optional:
                       type: boolean
+                    oracleCloud:
+                      properties:
+                        authMode:
+                          type: string
+                        bucketName:
+                          type: string
+                        key:
+                          type: string
+                        region:
+                          type: string
+                      required:
+                      - authMode
+                      - bucketName
+                      - key
+                      - region
+                      type: object
                     oss:
                       properties:
                         accessKeySecret:
