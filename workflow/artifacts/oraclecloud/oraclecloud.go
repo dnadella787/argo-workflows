@@ -70,11 +70,21 @@ func (ad *ArtifactDriver) Delete(artifact *v1alpha1.Artifact) error {
 		return err
 	}
 
-	return ad.deleteDir(client, ns, artifact.OracleCloud.Key)
+	return ad.deleteDirObj(client, ns, artifact.OracleCloud.Key)
 }
 
 func (ad *ArtifactDriver) ListObjects(artifact *v1alpha1.Artifact) ([]string, error) {
-	return nil, nil
+	client, err := ad.newOracleCloudClient()
+	if err != nil {
+		return nil, err
+	}
+
+	ns, err := getNamespace(client)
+	if err != nil {
+		return nil, err
+	}
+
+	return ad.listObjectsByPrefix(client, ns, artifact.OracleCloud.Key)
 }
 
 func (ad *ArtifactDriver) IsDirectory(artifact *v1alpha1.Artifact) (bool, error) {
@@ -164,30 +174,14 @@ func (ad *ArtifactDriver) deleteObj(client *objectstorage.ObjectStorageClient, n
 	return err
 }
 
-func (ad *ArtifactDriver) deleteDir(client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix string) error {
-	ctx := context.Background()
-	var nextStartsWith *string
-	for {
-		objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
-			NamespaceName: pointer.String(namespace),
-			BucketName:    pointer.String(ad.BucketName),
-			Prefix:        pointer.String(dirObjPrefix),
-			StartAfter:    nextStartsWith,
-		})
-		if err != nil {
+func (ad *ArtifactDriver) deleteDirObj(client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix string) error {
+	objs, err := ad.listObjectsByPrefix(client, namespace, dirObjPrefix)
+	if err != nil {
+		return err
+	}
+	for _, obj := range objs {
+		if err = ad.deleteObj(client, namespace, obj); err != nil {
 			return err
-		}
-		nextStartsWith = objs.NextStartWith
-
-		for _, obj := range objs.Objects {
-			if err = ad.deleteObj(client, namespace, *obj.Name); err != nil {
-				return err
-			}
-		}
-
-		// paginated through all files
-		if nextStartsWith == nil {
-			break
 		}
 	}
 	return nil
@@ -207,43 +201,52 @@ func (ad *ArtifactDriver) loadFile(client *objectstorage.ObjectStorageClient, na
 // file too because the directory object storage prefix for a file
 // is just the entire file name which gets returned in list call
 func (ad *ArtifactDriver) loadDir(client *objectstorage.ObjectStorageClient, namespace, dirObjPrefix, localPath string) error {
-	var nextStartsWith *string
-	objsFound := false
-	ctx := context.Background()
+	objs, err := ad.listObjectsByPrefix(client, namespace, dirObjPrefix)
+	if err != nil {
+		return err
+	}
+	if len(objs) < 1 {
+		return errors.New(errors.CodeNotFound, fmt.Sprintf("no objects with prefix: %s found in Oracle Object Storage bucket: %s, namespace: %s", dirObjPrefix, ad.BucketName, namespace))
+	}
+	for _, obj := range objs {
+		// remove the key from the full object name and append it to the local directory path
+		filePath := path.Join(localPath, strings.TrimPrefix(obj, dirObjPrefix))
+		err = ad.loadFile(client, namespace, obj, filePath)
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func (ad *ArtifactDriver) listObjectsByPrefix(client *objectstorage.ObjectStorageClient, namespace, prefix string) ([]string, error) {
+	var (
+		files          []string
+		nextStartsWith *string
+	)
+	ctx := context.Background()
 	for {
 		objs, err := client.ListObjects(ctx, objectstorage.ListObjectsRequest{
 			NamespaceName: pointer.String(namespace),
 			BucketName:    pointer.String(ad.BucketName),
-			Prefix:        pointer.String(dirObjPrefix),
+			Prefix:        pointer.String(prefix),
 			StartAfter:    nextStartsWith,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if len(objs.Objects) > 0 {
-			objsFound = true
+		for _, obj := range objs.Objects {
+			files = append(files, *obj.Name)
 		}
 		nextStartsWith = objs.NextStartWith
-
-		for _, obj := range objs.Objects {
-			// remove the key from the full object name and append it to the local directory path
-			filePath := path.Join(localPath, strings.TrimPrefix(*obj.Name, dirObjPrefix))
-			err = ad.loadFile(client, namespace, *obj.Name, filePath)
-			if err != nil {
-				return err
-			}
-		}
 
 		// paginated through all files
 		if nextStartsWith == nil {
 			break
 		}
 	}
-	if !objsFound {
-		return errors.New(errors.CodeNotFound, fmt.Sprintf("directory %s not found in Oracle Object Storage bucket %s in namespace %s", dirObjPrefix, ad.BucketName, namespace))
-	}
-	return nil
+	return files, nil
 }
 
 // getObjectContent returns the content of a specific object in an OCI object storage bucket
